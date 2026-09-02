@@ -1,0 +1,548 @@
+/* =========================
+   СОМНА — стилі сну
+   ========================= */
+
+:root {
+  --bg: #05050a;
+  --island-bg: rgba(18, 18, 28, 0.85);
+  --text: #c8c8d8;
+  --text-dim: #6a6a7a;
+  --accent: #7b6cff;
+  --warm: #ff9a6c;
+  --glow: rgba(123, 108, 255, 0.35);
+  --glitch: #ff2a6d;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  cursor: default;
+  user-select: none;
+}
+
+/* Темний фон з легким шумом */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: 
+    radial-gradient(ellipse at 20% 30%, rgba(40, 30, 80, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 70%, rgba(30, 50, 70, 0.12) 0%, transparent 50%),
+    linear-gradient(180deg, #05050a 0%, #0a0a14 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* =========================
+   HEADER
+   ========================= */
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 28px;
+  background: linear-gradient(to bottom, rgba(5,5,10,0.9), transparent);
+  pointer-events: none;
+}
+
+.logo {
+  font-size: 1.4rem;
+  font-weight: 300;
+  letter-spacing: 0.35em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+.logo span {
+  color: var(--accent);
+  opacity: 0.7;
+}
+
+.user-nick {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  pointer-events: auto;
+}
+
+.user-nick strong {
+  color: var(--text);
+  font-weight: 400;
+}
+
+/* =========================
+   FEED — плаваючі острови
+   ========================= */
+.feed {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.post-island {
+  position: absolute;
+  width: min(340px, 85vw);
+  background: var(--island-bg);
+  border: 1px solid rgba(123, 108, 255, 0.12);
+  border-radius: 18px;
+  padding: 18px 20px 14px;
+  backdrop-filter: blur(12px);
+  box-shadow: 
+    0 0 40px rgba(0,0,0,0.5),
+    0 0 1px rgba(123, 108, 255, 0.3);
+  transition: 
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.4s ease,
+    opacity 0.8s ease,
+    filter 0.5s ease;
+  cursor: pointer;
+  will-change: transform, left, top;
+}
+
+.post-island:hover {
+  border-color: rgba(123, 108, 255, 0.3);
+  box-shadow: 
+    0 0 50px rgba(123, 108, 255, 0.15),
+    0 0 1px rgba(123, 108, 255, 0.5);
+}
+
+/* Дрейф */
+.post-island.drifting {
+  animation: drift 18s ease-in-out infinite alternate;
+}
+
+@keyframes drift {
+  0%   { transform: translate(0, 0) rotate(0deg); }
+  25%  { transform: translate(12px, -18px) rotate(0.6deg); }
+  50%  { transform: translate(-8px, 10px) rotate(-0.4deg); }
+  75%  { transform: translate(15px, 6px) rotate(0.3deg); }
+  100% { transform: translate(-5px, -12px) rotate(-0.5deg); }
+}
+
+/* Розчинення */
+.post-island.dissolving {
+  opacity: 0;
+  filter: blur(12px);
+  transform: scale(0.85);
+  pointer-events: none;
+}
+
+/* Пульсація від дотику */
+.post-island.touched {
+  box-shadow: 
+    0 0 60px rgba(255, 154, 108, 0.25),
+    0 0 2px rgba(255, 154, 108, 0.6);
+  border-color: rgba(255, 154, 108, 0.4);
+}
+
+.post-island.breathing {
+  animation: breathe 2.8s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%, 100% { 
+    transform: scale(1);
+    box-shadow: 0 0 40px rgba(255, 154, 108, 0.15);
+  }
+  50% { 
+    transform: scale(1.025);
+    box-shadow: 0 0 70px rgba(255, 154, 108, 0.3);
+  }
+}
+
+/* =========================
+   ТІНЬ-АВАТАР
+   ========================= */
+.post-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.shadow-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #3a3a55, #1a1a2a);
+  position: relative;
+  flex-shrink: 0;
+  overflow: hidden;
+  transition: border-radius 1.5s ease, transform 1.2s ease;
+}
+
+.shadow-avatar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: inherit;
+  filter: blur(4px);
+  opacity: 0.7;
+}
+
+/* Форми тіней залежно від настрою */
+.shadow-avatar[data-mood="спокійний"] {
+  border-radius: 50% 40% 50% 40%;
+}
+.shadow-avatar[data-mood="тривожний"] {
+  border-radius: 30% 70% 40% 60%;
+  animation: morph-anxious 3s ease-in-out infinite;
+}
+.shadow-avatar[data-mood="сумний"] {
+  border-radius: 60% 40% 50% 50%;
+  transform: scaleY(0.9);
+}
+.shadow-avatar[data-mood="радісний"] {
+  border-radius: 45% 55% 40% 60%;
+  animation: morph-happy 2.5s ease-in-out infinite;
+}
+.shadow-avatar[data-mood="цікавий"] {
+  border-radius: 40% 60% 55% 45%;
+}
+.shadow-avatar[data-mood="сонний"] {
+  border-radius: 50%;
+  opacity: 0.7;
+  filter: blur(1px);
+}
+.shadow-avatar[data-mood="задумливий"] {
+  border-radius: 55% 45% 60% 40%;
+}
+.shadow-avatar[data-mood="наляканий"] {
+  border-radius: 35% 65% 30% 70%;
+  animation: morph-fear 1.8s ease-in-out infinite;
+}
+.shadow-avatar[data-mood="нейтральний"] {
+  border-radius: 50%;
+}
+
+@keyframes morph-anxious {
+  0%, 100% { border-radius: 30% 70% 40% 60%; }
+  50% { border-radius: 60% 30% 65% 35%; }
+}
+@keyframes morph-happy {
+  0%, 100% { border-radius: 45% 55% 40% 60%; }
+  50% { border-radius: 55% 45% 55% 45%; }
+}
+@keyframes morph-fear {
+  0%, 100% { border-radius: 35% 65% 30% 70%; transform: scale(1); }
+  50% { border-radius: 50% 50% 45% 55%; transform: scale(1.05); }
+}
+
+.author-name {
+  font-size: 0.9rem;
+  color: var(--text);
+  opacity: 0.9;
+}
+
+.post-date {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+/* =========================
+   КОНТЕНТ ПОСТА
+   ========================= */
+.post-content {
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--text);
+  margin-bottom: 14px;
+  word-break: break-word;
+}
+
+.blackout {
+  background: #111;
+  color: transparent;
+  padding: 0 3px;
+  border-radius: 2px;
+  letter-spacing: 0.1em;
+  user-select: none;
+}
+
+/* =========================
+   ДІЇ
+   ========================= */
+.post-actions {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+.touch-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.touch-btn:hover {
+  color: var(--warm);
+}
+
+.comment-btn {
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.comment-btn:hover {
+  color: var(--accent);
+}
+
+/* =========================
+   ПАНЕЛЬ КОМЕНТАРІВ
+   ========================= */
+.comments-panel {
+  position: fixed;
+  top: 0;
+  right: -420px;
+  width: 400px;
+  max-width: 95vw;
+  height: 100vh;
+  background: rgba(10, 10, 18, 0.95);
+  border-left: 1px solid rgba(123, 108, 255, 0.15);
+  backdrop-filter: blur(20px);
+  z-index: 200;
+  transition: right 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.comments-panel.open {
+  right: 0;
+}
+
+.comments-header {
+  padding: 20px 22px 14px;
+  border-bottom: 1px solid rgba(123, 108, 255, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.comments-header h3 {
+  font-weight: 400;
+  font-size: 1rem;
+  color: var(--text-dim);
+}
+
+.close-comments {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 1.4rem;
+  cursor: pointer;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.close-comments:hover {
+  color: var(--text);
+}
+
+.comments-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 22px;
+}
+
+.comment {
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.comment-author {
+  font-size: 0.82rem;
+  color: var(--accent);
+  opacity: 0.8;
+  margin-bottom: 4px;
+}
+
+.comment-text {
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.comment-date {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  margin-top: 6px;
+  opacity: 0.7;
+}
+
+/* =========================
+   ФОРМА СТВОРЕННЯ ПОСТА
+   ========================= */
+.compose {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 150;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: min(420px, 90vw);
+}
+
+.compose textarea {
+  width: 100%;
+  height: 72px;
+  background: rgba(18, 18, 28, 0.9);
+  border: 1px solid rgba(123, 108, 255, 0.2);
+  border-radius: 14px;
+  padding: 14px 16px;
+  color: var(--text);
+  font-size: 0.9rem;
+  resize: none;
+  outline: none;
+  font-family: inherit;
+  backdrop-filter: blur(10px);
+  transition: border-color 0.3s;
+}
+
+.compose textarea:focus {
+  border-color: rgba(123, 108, 255, 0.5);
+}
+
+.compose textarea::placeholder {
+  color: var(--text-dim);
+}
+
+.publish-btn {
+  position: relative;
+  background: linear-gradient(135deg, #5a4fd4, #7b6cff);
+  color: white;
+  border: none;
+  border-radius: 999px;
+  padding: 10px 28px;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.3s;
+  box-shadow: 0 4px 20px rgba(123, 108, 255, 0.3);
+}
+
+.publish-btn:hover {
+  box-shadow: 0 6px 28px rgba(123, 108, 255, 0.45);
+}
+
+/* Кнопка втікає */
+.publish-btn.fleeing {
+  transition: transform 0.12s ease-out;
+}
+
+/* =========================
+   ГЛЮКИ
+   ========================= */
+.glitch-rect {
+  position: fixed;
+  background: #111;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.85;
+  animation: glitch-fade 0.4s ease-out forwards;
+}
+
+@keyframes glitch-fade {
+  0% { opacity: 0.9; }
+  100% { opacity: 0; }
+}
+
+.glitch-square {
+  position: fixed;
+  background: #0a0a0a;
+  border: 1px solid #222;
+  z-index: 9998;
+  pointer-events: none;
+  animation: glitch-fade 0.6s ease-out forwards;
+}
+
+/* =========================
+   INTRO / NICK GENERATION
+   ========================= */
+.intro-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  transition: opacity 1.2s ease;
+}
+
+.intro-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.intro-title {
+  font-size: 2.2rem;
+  font-weight: 200;
+  letter-spacing: 0.5em;
+  color: var(--text-dim);
+}
+
+.intro-nick {
+  font-size: 1.1rem;
+  color: var(--text);
+  opacity: 0;
+  transition: opacity 1s ease 0.3s;
+}
+
+.intro-nick.visible {
+  opacity: 1;
+}
+
+.intro-hint {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  opacity: 0;
+  transition: opacity 1s ease 1s;
+}
+
+.intro-hint.visible {
+  opacity: 0.7;
+}
+
+/* =========================
+   RESPONSIVE
+   ========================= */
+@media (max-width: 600px) {
+  .comments-panel {
+    width: 100%;
+    right: -100%;
+  }
+  
+  .post-island {
+    width: 88vw;
+  }
+  
+  .header {
+    padding: 12px 16px;
+  }
+        }
