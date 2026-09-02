@@ -29,7 +29,7 @@ html, body {
   user-select: none;
 }
 
-/* Темний фон з легким шумом */
+/* Темний фон */
 body::before {
   content: "";
   position: fixed;
@@ -195,7 +195,7 @@ body::before {
   opacity: 0.7;
 }
 
-/* Форми тіней залежно від настрою */
+/* Форми тіней */
 .shadow-avatar[data-mood="спокійний"] {
   border-radius: 50% 40% 50% 40%;
 }
@@ -448,7 +448,6 @@ body::before {
   box-shadow: 0 6px 28px rgba(123, 108, 255, 0.45);
 }
 
-/* Кнопка втікає */
 .publish-btn.fleeing {
   transition: transform 0.12s ease-out;
 }
@@ -480,7 +479,7 @@ body::before {
 }
 
 /* =========================
-   INTRO / NICK GENERATION
+   INTRO
    ========================= */
 .intro-overlay {
   position: fixed;
@@ -530,19 +529,143 @@ body::before {
 }
 
 /* =========================
-   RESPONSIVE
+   RESPONSIVE / MOBILE
    ========================= */
-@media (max-width: 600px) {
-  .comments-panel {
-    width: 100%;
-    right: -100%;
-  }
-  
-  .post-island {
-    width: 88vw;
-  }
-  
+@media (max-width: 768px) {
   .header {
     padding: 12px 16px;
   }
-        }
+
+  .logo {
+    font-size: 1.15rem;
+    letter-spacing: 0.28em;
+  }
+
+  .user-nick {
+    font-size: 0.78rem;
+  }
+
+  .post-island {
+    width: min(92vw, 340px);
+    padding: 16px 16px 12px;
+    border-radius: 16px;
+  }
+
+  .post-content {
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .post-actions {
+    font-size: 0.75rem;
+    gap: 14px;
+  }
+
+  .shadow-avatar {
+    width: 32px;
+    height: 32px;
+  }
+
+  .author-name {
+    font-size: 0.85rem;
+  }
+
+  .post-date {
+    font-size: 0.68rem;
+  }
+
+  .comments-panel {
+    width: 100%;
+    max-width: 100%;
+    right: -100%;
+  }
+
+  .comments-header {
+    padding: 16px 18px 12px;
+  }
+
+  .comments-list {
+    padding: 14px 18px;
+  }
+
+  .compose {
+    bottom: 16px;
+    width: calc(100% - 24px);
+    max-width: 100%;
+    padding: 0 12px;
+    box-sizing: border-box;
+  }
+
+  .compose textarea {
+    height: 64px;
+    font-size: 0.88rem;
+    padding: 12px 14px;
+    border-radius: 12px;
+  }
+
+  .publish-btn {
+    padding: 10px 24px;
+    font-size: 0.85rem;
+  }
+
+  .publish-btn.fleeing {
+    transition: transform 0.15s ease-out;
+  }
+
+  .intro-title {
+    font-size: 1.7rem;
+    letter-spacing: 0.35em;
+  }
+
+  .intro-nick {
+    font-size: 1rem;
+  }
+}
+
+/* Дуже маленькі екрани */
+@media (max-width: 380px) {
+  .post-island {
+    width: 94vw;
+    padding: 14px 14px 10px;
+  }
+
+  .logo {
+    font-size: 1rem;
+    letter-spacing: 0.22em;
+  }
+
+  .compose {
+    bottom: 12px;
+  }
+}
+
+/* Safe-area (iPhone тощо) */
+@supports (padding: max(0px)) {
+  .header {
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+    padding-top: max(12px, env(safe-area-inset-top));
+  }
+
+  .compose {
+    bottom: max(16px, env(safe-area-inset-bottom));
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+  }
+
+  .comments-panel {
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
+/* Touch-пристрої */
+@media (hover: none) and (pointer: coarse) {
+  .post-island {
+    padding: 18px 18px 14px;
+  }
+
+  .touch-btn,
+  .comment-btn {
+    padding: 6px 0;
+  }
+}
