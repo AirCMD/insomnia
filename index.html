@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Сомна</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- Intro -->
+  <div class="intro-overlay" id="intro">
+    <div class="intro-title">СОМНА</div>
+    <div class="intro-nick" id="intro-nick"></div>
+    <div class="intro-hint" id="intro-hint">ти вже тут</div>
+  </div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="logo">со<span>мна</span></div>
+    <div class="user-nick">ти · <strong id="user-nick">...</strong></div>
+  </header>
+
+  <!-- Feed — плаваючі острови -->
+  <main class="feed" id="feed"></main>
+
+  <!-- Панель коментарів -->
+  <aside class="comments-panel" id="comments-panel">
+    <div class="comments-header">
+      <h3 id="comments-title">коментарі</h3>
+      <button class="close-comments" id="close-comments">×</button>
+    </div>
+    <div class="comments-list" id="comments-list"></div>
+  </aside>
+
+  <!-- Форма створення -->
+  <div class="compose">
+    <textarea 
+      id="compose-text" 
+      placeholder="що тобі снилося..."
+      maxlength="280"
+    ></textarea>
+    <button class="publish-btn" id="publish-btn">опублікувати</button>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
