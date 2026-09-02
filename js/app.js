@@ -36,7 +36,7 @@ function applyBlackouts(text) {
   if (Math.random() < 0.4) {
     const words = result.split(" ");
     const idx = Math.floor(Math.random() * words.length);
-    if (words[idx].length > 3 && !words[idx].includes("█")) {
+    if (words[idx] && words[idx].length > 3 && !words[idx].includes("█")) {
       words[idx] = "██████";
       result = words.join(" ");
     }
@@ -56,8 +56,10 @@ function createIsland(post, index) {
   island.className = "post-island drifting";
   island.dataset.id = post.id;
 
-  const x = 5 + Math.random() * 60;
-  const y = 12 + Math.random() * 55;
+  // позиція (на мобільних обережніше)
+  const isMobile = window.innerWidth < 768;
+  const x = isMobile ? 3 + Math.random() * 40 : 5 + Math.random() * 60;
+  const y = isMobile ? 14 + Math.random() * 42 : 12 + Math.random() * 55;
   island.style.left = `${x}%`;
   island.style.top = `${y}%`;
   island.style.animationDelay = `${-Math.random() * 12}s`;
@@ -187,13 +189,16 @@ function spawnGlitch() {
 function setupFleeingButton() {
   const btn = document.getElementById("publish-btn");
   let fleeTimeout = null;
+  const isTouch = window.matchMedia("(hover: none) and (pointer: coarse)").matches;
 
   btn.addEventListener("mouseenter", () => {
     if (fleeTimeout) clearTimeout(fleeTimeout);
 
-    const distance = Math.random() < 0.12 
-      ? 300 + Math.random() * 200
-      : 3 + Math.random() * 12;
+    // На мобільних втікає рідше і менше
+    const farChance = isTouch ? 0.04 : 0.12;
+    const distance = Math.random() < farChance
+      ? (isTouch ? 60 + Math.random() * 100 : 300 + Math.random() * 200)
+      : (isTouch ? 2 + Math.random() * 7 : 3 + Math.random() * 12);
 
     const angle = Math.random() * Math.PI * 2;
     const dx = Math.cos(angle) * distance;
