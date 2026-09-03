@@ -1,5 +1,5 @@
 /* =========================
-   СОМНА — логіка сну (оптимізована)
+   СОМНА — логіка сну
    ========================= */
 
 const NICK_PREFIXES = [
@@ -12,52 +12,36 @@ const NICK_SUFFIXES = [
   "тихого", "далекого", "забутого", "неіснуючого", "вчорашнього"
 ];
 
-var currentUser = "";
-var posts = [];
-var touchCounts = {};
-var activityScore = 0;
-var lucidActive = false;
-var paralysisActive = false;
-var dreamTimeOffset = 0;
-var currentTheme = "default";
-var nextPostId = 100;
-var MAX_ISLANDS = 8;
-var isWeak = false;
-var tabHidden = false;
-var feedEl = null;
+let currentUser = "";
+let posts = [];
+let touchCounts = {};
+let activityScore = 0;
+let lucidActive = false;
+let paralysisActive = false;
+let dreamTimeOffset = 0;
+let currentTheme = "default";
+let nextPostId = 100;
 
-function detectWeakDevice() {
-  var cores = navigator.hardwareConcurrency || 2;
-  var mem = navigator.deviceMemory || 2;
-  var mobile = window.innerWidth < 768 || /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
-  isWeak = cores <= 4 || mem <= 2 || mobile;
-  if (isWeak) {
-    MAX_ISLANDS = 5;
-    document.body.classList.add("weak-device");
-  }
-}
-
+// ---------- Генерація ніка ----------
 function generateNick() {
-  var p = NICK_PREFIXES[Math.floor(Math.random() * NICK_PREFIXES.length)];
-  var s = NICK_SUFFIXES[Math.floor(Math.random() * NICK_SUFFIXES.length)];
+  const p = NICK_PREFIXES[Math.floor(Math.random() * NICK_PREFIXES.length)];
+  const s = NICK_SUFFIXES[Math.floor(Math.random() * NICK_SUFFIXES.length)];
   return p + "_" + s + "_" + Math.floor(Math.random() * 90 + 10);
 }
 
-function applyBlackouts(text, intensity) {
-  intensity = intensity == null ? 0.3 : intensity;
-  var result = String(text);
-  var i, word, regex, words, idx;
-  for (i = 0; i < BLACKOUT_WORDS.length; i++) {
+// ---------- Чорні квадрати ----------
+function applyBlackouts(text, intensity = 0.35) {
+  let result = String(text);
+  BLACKOUT_WORDS.forEach(word => {
     if (Math.random() < intensity) {
-      word = BLACKOUT_WORDS[i];
-      regex = new RegExp(word, "gi");
+      const regex = new RegExp(word, "gi");
       result = result.replace(regex, "██████");
     }
-  }
-  if (Math.random() < intensity + 0.08) {
-    words = result.split(" ");
-    idx = Math.floor(Math.random() * words.length);
-    if (words[idx] && words[idx].length > 3 && words[idx].indexOf("█") === -1) {
+  });
+  if (Math.random() < intensity + 0.1) {
+    const words = result.split(" ");
+    const idx = Math.floor(Math.random() * words.length);
+    if (words[idx] && words[idx].length > 3 && !words[idx].includes("█")) {
       words[idx] = "██████";
       result = words.join(" ");
     }
@@ -65,48 +49,51 @@ function applyBlackouts(text, intensity) {
   return result;
 }
 
-function formatContent(text, intensity) {
+function formatContent(text, intensity = 0.35) {
   return applyBlackouts(text, intensity)
     .replace(/██████/g, '<span class="blackout">██████</span>');
 }
 
+// ---------- Створення острова ----------
 function createIsland(post) {
-  var island = document.createElement("div");
-  island.className = "post-island" + (isWeak ? "" : " drifting");
+  const island = document.createElement("div");
+  island.className = "post-island drifting";
   island.dataset.id = post.id;
-  island.dataset.age = "0";
+  island.dataset.age = 0;
 
-  var isMobile = window.innerWidth < 768;
-  var x = isMobile ? 4 + Math.random() * 38 : 6 + Math.random() * 55;
-  var y = isMobile ? 16 + Math.random() * 40 : 14 + Math.random() * 50;
+  const isMobile = window.innerWidth < 768;
+  const x = isMobile ? 4 + Math.random() * 38 : 6 + Math.random() * 55;
+  const y = isMobile ? 16 + Math.random() * 40 : 14 + Math.random() * 50;
   island.style.left = x + "%";
   island.style.top = y + "%";
+  island.style.animationDelay = (-Math.random() * 12) + "s";
+  island.style.animationDuration = (14 + Math.random() * 10) + "s";
 
-  if (!isWeak) {
-    island.style.animationDelay = (-Math.random() * 12) + "s";
-    island.style.animationDuration = (16 + Math.random() * 10) + "s";
-  }
-
-  var user = FAKE_USERS.find(function(u) { return u.name === post.author; }) || { mood: "нейтральний" };
-  var isSleeping = !isWeak && Math.random() < 0.18;
-  var authorName = String(post.author || "невідомий");
-  var sleepClass = isSleeping ? " sleeping" : "";
+  const user = FAKE_USERS.find(u => u.name === post.author) || { mood: "нейтральний" };
+  const isSleeping = Math.random() < 0.22;
+  const authorName = String(post.author || "невідомий");
+  const sleepClass = isSleeping ? "sleeping" : "";
 
   island.innerHTML =
     '<div class="post-header">' +
-      '<div class="shadow-avatar' + sleepClass + '" data-mood="' + user.mood + '"></div>' +
+      '<div class="shadow-avatar ' + sleepClass + '" data-mood="' + user.mood + '"></div>' +
       '<div>' +
         '<div class="author-name"></div>' +
         '<div class="post-date">' + post.displayDate + '</div>' +
       '</div>' +
     '</div>' +
-    '<div class="post-content">' + formatContent(post.content, isWeak ? 0.2 : 0.3) + '</div>' +
+    '<div class="post-content">' + formatContent(post.content) + '</div>' +
     '<div class="post-actions">' +
-      '<div class="touch-btn" data-id="' + post.id + '"><span>◉</span> <span class="touch-label">дотик</span></div>' +
-      '<div class="comment-btn" data-id="' + post.id + '">коментарі · ' + post.commentsCount + '</div>' +
+      '<div class="touch-btn" data-id="' + post.id + '">' +
+        '<span>◉</span> <span class="touch-label">дотик</span>' +
+      '</div>' +
+      '<div class="comment-btn" data-id="' + post.id + '">' +
+        'коментарі · ' + post.commentsCount +
+      '</div>' +
     '</div>';
 
-  var nameEl = island.querySelector(".author-name");
+  // Ім'я окремо — щоб не ламалося
+  const nameEl = island.querySelector(".author-name");
   nameEl.textContent = authorName;
   nameEl.dataset.original = authorName;
 
@@ -125,112 +112,133 @@ function createIsland(post) {
   });
 
   enableDrag(island);
+
+  if (Math.random() < 0.1) {
+    setTimeout(function() { dissolveIsland(island); }, 12000 + Math.random() * 18000);
+  }
+
   return island;
 }
 
 function dissolveIsland(island) {
   island.classList.add("dissolving");
-  setTimeout(function() {
-    if (island.parentNode) island.remove();
-  }, 700);
+  setTimeout(function() { island.remove(); }, 900);
 }
 
-var dragState = null;
-
+// ---------- Перетягування ----------
 function enableDrag(island) {
-  island.addEventListener("mousedown", onDragStart);
-  island.addEventListener("touchstart", onDragStart, { passive: false });
-}
+  var isDragging = false;
+  var startX, startY, origLeft, origTop;
 
-function onDragStart(e) {
-  if (paralysisActive) return;
-  if (e.target.closest(".touch-btn") || e.target.closest(".comment-btn")) return;
+  function onStart(e) {
+    if (paralysisActive) return;
+    if (e.target.closest(".touch-btn") || e.target.closest(".comment-btn")) return;
 
-  var island = e.currentTarget;
-  var point = e.touches ? e.touches[0] : e;
-  var rect = island.getBoundingClientRect();
+    isDragging = true;
+    island.classList.add("dragging");
+    island.classList.remove("drifting");
 
-  dragState = {
-    island: island,
-    startX: point.clientX,
-    startY: point.clientY,
-    origLeft: rect.left,
-    origTop: rect.top
-  };
+    var point = e.touches ? e.touches[0] : e;
+    startX = point.clientX;
+    startY = point.clientY;
 
-  island.classList.add("dragging");
-  island.classList.remove("drifting");
-  island.style.left = rect.left + "px";
-  island.style.top = rect.top + "px";
-  island.style.right = "auto";
-  island.style.bottom = "auto";
-  island.style.position = "fixed";
-  island.style.zIndex = "50";
-  e.preventDefault();
-}
+    var rect = island.getBoundingClientRect();
+    origLeft = rect.left;
+    origTop = rect.top;
 
-function onDragMove(e) {
-  if (!dragState) return;
-  e.preventDefault();
-  var point = e.touches ? e.touches[0] : e;
-  dragState.island.style.left = (dragState.origLeft + point.clientX - dragState.startX) + "px";
-  dragState.island.style.top = (dragState.origTop + point.clientY - dragState.startY) + "px";
-}
-
-function onDragEnd() {
-  if (!dragState) return;
-  var island = dragState.island;
-  island.classList.remove("dragging");
-
-  var rect = island.getBoundingClientRect();
-  var parent = feedEl.getBoundingClientRect();
-  island.style.position = "absolute";
-  island.style.left = ((rect.left - parent.left) / parent.width * 100) + "%";
-  island.style.top = ((rect.top - parent.top) / parent.height * 100) + "%";
-  island.style.zIndex = "";
-
-  if (!isWeak) {
-    setTimeout(function() { island.classList.add("drifting"); }, 40);
+    island.style.left = origLeft + "px";
+    island.style.top = origTop + "px";
+    island.style.right = "auto";
+    island.style.bottom = "auto";
+    island.style.position = "fixed";
+    island.style.zIndex = "50";
   }
-  dragState = null;
+
+  function onMove(e) {
+    if (!isDragging) return;
+    e.preventDefault();
+    var point = e.touches ? e.touches[0] : e;
+    island.style.left = (origLeft + point.clientX - startX) + "px";
+    island.style.top = (origTop + point.clientY - startY) + "px";
+  }
+
+  function onEnd() {
+    if (!isDragging) return;
+    isDragging = false;
+    island.classList.remove("dragging");
+    var rect = island.getBoundingClientRect();
+    var parent = document.getElementById("feed").getBoundingClientRect();
+    island.style.position = "absolute";
+    island.style.left = ((rect.left - parent.left) / parent.width * 100) + "%";
+    island.style.top = ((rect.top - parent.top) / parent.height * 100) + "%";
+    island.style.zIndex = "";
+    setTimeout(function() { island.classList.add("drifting"); }, 50);
+  }
+
+  island.addEventListener("mousedown", onStart);
+  island.addEventListener("touchstart", onStart, { passive: false });
+  window.addEventListener("mousemove", onMove);
+  window.addEventListener("touchmove", onMove, { passive: false });
+  window.addEventListener("mouseup", onEnd);
+  window.addEventListener("touchend", onEnd);
 }
 
+// ---------- Дотик ----------
 function handleTouch(id, island) {
   touchCounts[id] = (touchCounts[id] || 0) + 1;
   island.classList.add("touched");
-  island.dataset.age = "0";
+  island.dataset.age = 0;
 
-  if (touchCounts[id] >= 4) island.classList.add("breathing");
+  if (touchCounts[id] >= 4) {
+    island.classList.add("breathing");
+  }
 
   var avatar = island.querySelector(".shadow-avatar");
   if (avatar && avatar.classList.contains("sleeping")) {
     avatar.classList.remove("sleeping");
     avatar.classList.add("waking");
-    setTimeout(function() { avatar.classList.remove("waking"); }, 1200);
+    setTimeout(function() { avatar.classList.remove("waking"); }, 1500);
   }
 
   setTimeout(function() {
     if (touchCounts[id] < 4) island.classList.remove("touched");
-  }, 1000);
+  }, 1200);
 }
 
+// ---------- Коментарі ----------
 function openComments(post) {
   var panel = document.getElementById("comments-panel");
   var list = document.getElementById("comments-list");
   var title = document.getElementById("comments-title");
 
   title.textContent = "коментарі · " + post.commentsCount;
-  var html = "";
-  for (var i = 0; i < post.comments.length; i++) {
-    var c = post.comments[i];
-    html +=
-      '<div class="comment">' +
-        '<div class="comment-author">' + c.author + '</div>' +
-        '<div class="comment-text">' + formatContent(c.text, 0.25) + '</div>' +
-        '<div class="comment-date">' + c.date + '</div>' +
-      '</div>';
+  list.innerHTML = "";
+
+  post.comments.forEach(function(c) {
+    var div = document.createElement("div");
+    div.className = "comment";
+    div.innerHTML =
+      '<div class="comment-author">' + c.author + '</div>' +
+      '<div class="comment-text">' + formatContent(c.text) + '</div>' +
+      '<div class="comment-date">' + c.date + '</div>';
+    list.appendChild(div);
+  });
+
+  if (Math.random() < 0.3) {
+    setTimeout(function() {
+      list.querySelectorAll(".comment-text").forEach(function(el) {
+        var words = el.textContent.split(" ");
+        if (words.length > 3) {
+          var i = Math.floor(Math.random() * (words.length - 1));
+          var tmp = words[i];
+          words[i] = words[i + 1];
+          words[i + 1] = tmp;
+          el.textContent = words.join(" ");
+        }
+      });
+    }, 1800 + Math.random() * 2500);
   }
-  list.innerHTML = html;
+
   panel.classList.add("open");
 }
 
@@ -238,52 +246,57 @@ function closeComments() {
   document.getElementById("comments-panel").classList.remove("open");
 }
 
+// ---------- Глюки ----------
 function spawnGlitch() {
-  if (lucidActive || tabHidden || isWeak) return;
-  if (Math.random() > 0.5) return;
-
+  if (lucidActive) return;
+  var type = Math.random() > 0.5 ? "rect" : "square";
   var el = document.createElement("div");
-  el.className = Math.random() > 0.5 ? "glitch-rect" : "glitch-square";
-  var w = 20 + Math.random() * 100;
+  el.className = type === "rect" ? "glitch-rect" : "glitch-square";
+  var w = type === "rect" ? 40 + Math.random() * 180 : 12 + Math.random() * 40;
+  var h = type === "rect" ? 4 + Math.random() * 18 : w;
   el.style.width = w + "px";
-  el.style.height = (Math.random() > 0.5 ? 4 + Math.random() * 12 : w) + "px";
+  el.style.height = h + "px";
   el.style.left = (Math.random() * 100) + "vw";
   el.style.top = (Math.random() * 100) + "vh";
   document.body.appendChild(el);
-  setTimeout(function() { if (el.parentNode) el.remove(); }, 400);
+  setTimeout(function() { el.remove(); }, 600);
 }
 
+// ---------- Кнопка, що втікає ----------
 function setupFleeingButton() {
   var btn = document.getElementById("publish-btn");
   var fleeTimeout = null;
   var isTouch = window.matchMedia("(hover: none) and (pointer: coarse)").matches;
 
   btn.addEventListener("mouseenter", function() {
-    if (paralysisActive || lucidActive || isWeak) return;
+    if (paralysisActive || lucidActive) return;
     if (fleeTimeout) clearTimeout(fleeTimeout);
 
-    var distance = Math.random() < 0.1 ? 200 + Math.random() * 150 : 3 + Math.random() * 10;
-    if (isTouch) distance = Math.min(distance, 40);
+    var farChance = isTouch ? 0.04 : 0.12;
+    var distance = Math.random() < farChance
+      ? (isTouch ? 60 + Math.random() * 100 : 300 + Math.random() * 200)
+      : (isTouch ? 2 + Math.random() * 7 : 3 + Math.random() * 12);
 
     var angle = Math.random() * Math.PI * 2;
     btn.classList.add("fleeing");
-    btn.style.transform = "translate(" + (Math.cos(angle) * distance) + "px," + (Math.sin(angle) * distance) + "px)";
+    btn.style.transform = "translate(" + (Math.cos(angle) * distance) + "px, " + (Math.sin(angle) * distance) + "px)";
 
     fleeTimeout = setTimeout(function() {
-      btn.style.transform = "translate(0,0)";
+      btn.style.transform = "translate(0, 0)";
       btn.classList.remove("fleeing");
-    }, 2500 + Math.random() * 3000);
+    }, 3000 + Math.random() * 5000);
   });
 }
 
+// ---------- Публікація ----------
 function publishPost() {
   if (paralysisActive) return;
+
   var textarea = document.getElementById("compose-text");
   var text = textarea.value.trim();
   if (!text) return;
 
-  text = applyBlackouts(text, 0.3);
-  trimIslands();
+  text = applyBlackouts(text);
 
   var newPost = {
     id: nextPostId++,
@@ -291,25 +304,24 @@ function publishPost() {
     content: text,
     date: "2047-11-13",
     displayDate: "завтра, " + weirdDate(),
-    commentsCount: Math.floor(Math.random() * 4) + 1,
+    commentsCount: Math.floor(Math.random() * 5) + 1,
     comments: [{
       author: FAKE_USERS[Math.floor(Math.random() * FAKE_USERS.length)].name,
       text: "Я бачив щось схоже. Але трохи інакше.",
-      date: "2009-03-14"
+      date: "2009-0" + (Math.floor(Math.random() * 9) + 1) + "-1" + Math.floor(Math.random() * 9)
     }]
   };
 
   posts.unshift(newPost);
-  feedEl.appendChild(createIsland(newPost));
+  document.getElementById("feed").appendChild(createIsland(newPost));
   textarea.value = "";
 
-  if (!isWeak && Math.random() < 0.4) {
+  if (Math.random() < 0.5) {
     setTimeout(function() {
-      trimIslands();
       var echo = {
         id: nextPostId++,
         author: FAKE_USERS[Math.floor(Math.random() * FAKE_USERS.length)].name,
-        content: applyBlackouts(text, 0.5),
+        content: applyBlackouts(text, 0.55),
         date: "1999-99-99",
         displayDate: "колись",
         commentsCount: 0,
@@ -317,30 +329,25 @@ function publishPost() {
       };
       var echoIsland = createIsland(echo);
       echoIsland.classList.add("echo");
-      feedEl.appendChild(echoIsland);
-    }, 2000);
+      document.getElementById("feed").appendChild(echoIsland);
+    }, 2000 + Math.random() * 2000);
   }
 
   activityScore += 2;
+  setTimeout(spawnGlitch, 200);
+  setTimeout(spawnGlitch, 450);
 }
 
 function weirdDate() {
   var day = Math.floor(Math.random() * 28) + 1;
   var months = ["січня","лютого","березня","квітня","травня","червня","липня","серпня","вересня","жовтня","листопада","грудня"];
-  return day + " " + months[Math.floor(Math.random() * 12)] + " " + (20 + Math.floor(Math.random() * 80));
+  var year = 20 + Math.floor(Math.random() * 80);
+  return day + " " + months[Math.floor(Math.random() * 12)] + " " + year;
 }
 
-function trimIslands() {
-  var islands = feedEl.querySelectorAll(".post-island");
-  while (islands.length >= MAX_ISLANDS) {
-    dissolveIsland(islands[0]);
-    islands = feedEl.querySelectorAll(".post-island");
-  }
-}
-
+// ---------- Нові пости ----------
 function spawnNewPost() {
-  if (tabHidden) return;
-  if (feedEl.querySelectorAll(".post-island").length >= MAX_ISLANDS) return;
+  if (document.querySelectorAll(".post-island").length > 14) return;
 
   var author = FAKE_USERS[Math.floor(Math.random() * FAKE_USERS.length)].name;
   var content = EXTRA_DREAMS[Math.floor(Math.random() * EXTRA_DREAMS.length)];
@@ -351,7 +358,7 @@ function spawnNewPost() {
     content: content,
     date: "2088-01-01",
     displayDate: "завтра, " + weirdDate(),
-    commentsCount: Math.floor(Math.random() * 3) + 1,
+    commentsCount: Math.floor(Math.random() * 4) + 1,
     comments: [{
       author: FAKE_USERS[Math.floor(Math.random() * FAKE_USERS.length)].name,
       text: "Я теж це відчував.",
@@ -361,102 +368,95 @@ function spawnNewPost() {
 
   var island = createIsland(newPost);
   island.style.opacity = "0";
-  feedEl.appendChild(island);
+  document.getElementById("feed").appendChild(island);
   requestAnimationFrame(function() {
-    island.style.transition = "opacity 0.9s ease";
+    island.style.transition = "opacity 1.2s ease";
     island.style.opacity = "1";
   });
 }
 
-var tickCount = 0;
-
-function mainTick() {
-  if (tabHidden) return;
-  tickCount++;
-
-  if (tickCount % 3 === 0) updateDreamClock();
-  if (tickCount % 7 === 0) forgetPosts();
-  if (!isWeak && tickCount % 12 === 0) manageSleepingShadows();
-  if (!isWeak && tickCount % 10 === 0) mutateNames();
-  if (tickCount % 5 === 0) checkVoid();
-  if (tickCount % 20 === 0) maybeParalysis();
-  if (!isWeak && tickCount % 5 === 0) spawnGlitch();
-  if (tickCount % (isWeak ? 22 : 16) === 0) spawnNewPost();
-}
-
+// ---------- Забування ----------
 function forgetPosts() {
-  var islands = feedEl.querySelectorAll(".post-island");
-  for (var i = 0; i < islands.length; i++) {
-    var island = islands[i];
-    var age = parseInt(island.dataset.age || "0", 10) + 1;
-    island.dataset.age = String(age);
+  document.querySelectorAll(".post-island").forEach(function(island) {
+    var age = parseInt(island.dataset.age || "0");
+    age += 1;
+    island.dataset.age = age;
 
-    if (age > 12 && Math.random() < 0.3) {
-      var content = island.querySelector(".post-content");
-      if (content) {
-        content.innerHTML = formatContent(content.textContent, 0.2 + Math.min(age * 0.03, 0.5));
-      }
+    var content = island.querySelector(".post-content");
+    if (!content) return;
+
+    if (age > 9 && Math.random() < 0.35) {
+      content.innerHTML = formatContent(content.textContent, 0.2 + age * 0.035);
     }
-    if (age > 28 && Math.random() < 0.25) {
+    if (age > 24 && Math.random() < 0.28) {
       dissolveIsland(island);
     }
-  }
+  });
 }
 
+// ---------- Тіні засинають ----------
 function manageSleepingShadows() {
-  var avatars = feedEl.querySelectorAll(".shadow-avatar");
-  for (var i = 0; i < avatars.length; i++) {
-    if (Math.random() < 0.06) avatars[i].classList.add("sleeping");
-  }
+  document.querySelectorAll(".shadow-avatar").forEach(function(av) {
+    if (Math.random() < 0.07) av.classList.add("sleeping");
+  });
 }
 
+// ---------- Мутація імен ----------
 function mutateNames() {
-  var names = feedEl.querySelectorAll(".author-name");
-  for (var i = 0; i < names.length; i++) {
-    if (Math.random() < 0.07) {
-      var el = names[i];
+  document.querySelectorAll(".author-name").forEach(function(el) {
+    if (Math.random() < 0.08) {
       var original = el.dataset.original || el.textContent;
-      el.style.opacity = "0.35";
-      (function(node, orig) {
+      if (Math.random() < 0.5) {
+        el.style.opacity = "0.4";
         setTimeout(function() {
-          node.style.opacity = "1";
-          node.textContent = orig;
-        }, 600 + Math.random() * 800);
-      })(el, original);
+          el.style.opacity = "1";
+          el.textContent = original;
+        }, 800 + Math.random() * 1200);
+      }
     }
-  }
+  });
 }
 
+// ---------- Годинник ----------
 function updateDreamClock() {
   var clock = document.getElementById("dream-clock");
   if (!clock) return;
-  dreamTimeOffset += (Math.random() - 0.45) * 30;
-  var now = new Date(Date.now() + dreamTimeOffset * 60000);
+  dreamTimeOffset += (Math.random() - 0.45) * 35;
+  var now = new Date(Date.now() + dreamTimeOffset * 1000 * 60);
   var h = String(now.getHours()).padStart(2, "0");
   var m = String(now.getMinutes()).padStart(2, "0");
-  var weird = Math.random() < 0.1 ? (Math.random() < 0.5 ? "∞" : "??") : m;
+  var weird = Math.random() < 0.12 ? (Math.random() < 0.5 ? "∞" : "??") : m;
   clock.textContent = h + ":" + weird;
 }
 
+// ---------- Люцидний режим ----------
 function toggleLucid() {
   if (paralysisActive) return;
   lucidActive = true;
   document.body.classList.add("lucid");
   var btn = document.getElementById("lucid-btn");
   if (btn) btn.style.opacity = "0.3";
+
   setTimeout(function() {
     lucidActive = false;
     document.body.classList.remove("lucid");
+    document.querySelectorAll(".post-island").forEach(function(isle) {
+      if (Math.random() < 0.35) {
+        var content = isle.querySelector(".post-content");
+        if (content) content.innerHTML = formatContent(content.textContent, 0.5);
+      }
+    });
     if (btn) btn.style.opacity = "1";
-  }, 8000);
+  }, 9000);
 }
 
+// ---------- Провал ----------
 function checkVoid() {
-  if (activityScore > 16 && Math.random() < 0.35) {
+  if (activityScore > 14 && Math.random() < 0.4) {
     triggerVoid();
     activityScore = 0;
   }
-  activityScore = Math.max(0, activityScore - 0.4);
+  activityScore = Math.max(0, activityScore - 0.35);
 }
 
 function triggerVoid() {
@@ -464,11 +464,12 @@ function triggerVoid() {
   var messages = ["ти прокинувся?", "це все ще сон", "не рухайся", "хтось дивиться", "ти вже був тут"];
   voidEl.querySelector("span").textContent = messages[Math.floor(Math.random() * messages.length)];
   voidEl.classList.add("active");
-  setTimeout(function() { voidEl.classList.remove("active"); }, 2200);
+  setTimeout(function() { voidEl.classList.remove("active"); }, 2600 + Math.random() * 1400);
 }
 
+// ---------- Сонний параліч ----------
 function maybeParalysis() {
-  if (paralysisActive || lucidActive || isWeak || Math.random() > 0.012) return;
+  if (paralysisActive || lucidActive || Math.random() > 0.015) return;
   paralysisActive = true;
   document.body.classList.add("paralysis");
   document.getElementById("paralysis-msg").classList.add("visible");
@@ -476,26 +477,25 @@ function maybeParalysis() {
     paralysisActive = false;
     document.body.classList.remove("paralysis");
     document.getElementById("paralysis-msg").classList.remove("visible");
-  }, 4000);
+  }, 4200 + Math.random() * 1800);
 }
 
+// ---------- Теми ----------
 function setTheme(theme) {
   currentTheme = theme;
   document.body.dataset.theme = theme;
-  try { localStorage.setItem("somna-theme", theme); } catch (e) {}
-  var btns = document.querySelectorAll(".theme-btn");
-  for (var i = 0; i < btns.length; i++) {
-    btns[i].classList.toggle("active", btns[i].dataset.theme === theme);
-  }
+  localStorage.setItem("somna-theme", theme);
+
+  document.querySelectorAll(".theme-btn").forEach(function(btn) {
+    btn.classList.toggle("active", btn.dataset.theme === theme);
+  });
 }
 
+// ---------- Ініціалізація ----------
 function init() {
-  detectWeakDevice();
-  feedEl = document.getElementById("feed");
   currentUser = generateNick();
 
-  var savedTheme = "default";
-  try { savedTheme = localStorage.getItem("somna-theme") || "default"; } catch (e) {}
+  var savedTheme = localStorage.getItem("somna-theme") || "default";
   setTheme(savedTheme);
 
   var overlay = document.getElementById("intro");
@@ -505,17 +505,17 @@ function init() {
   nickEl.textContent = currentUser;
   document.getElementById("user-nick").textContent = currentUser;
 
-  setTimeout(function() { nickEl.classList.add("visible"); }, 500);
-  setTimeout(function() { hintEl.classList.add("visible"); }, 1200);
+  setTimeout(function() { nickEl.classList.add("visible"); }, 600);
+  setTimeout(function() { hintEl.classList.add("visible"); }, 1400);
   setTimeout(function() {
     overlay.classList.add("hidden");
-    setTimeout(function() { if (overlay.parentNode) overlay.remove(); }, 1000);
-  }, 2800);
+    setTimeout(function() { overlay.remove(); }, 1300);
+  }, 3200);
 
-  var initial = DREAM_POSTS.slice(0, isWeak ? 4 : 6);
-  posts = initial.slice();
-  initial.forEach(function(p, i) {
-    setTimeout(function() { feedEl.appendChild(createIsland(p)); }, i * 120);
+  posts = DREAM_POSTS.slice();
+  var feed = document.getElementById("feed");
+  posts.forEach(function(p, i) {
+    setTimeout(function() { feed.appendChild(createIsland(p)); }, i * 150);
   });
 
   document.getElementById("publish-btn").addEventListener("click", publishPost);
@@ -523,24 +523,18 @@ function init() {
   document.getElementById("close-comments").addEventListener("click", closeComments);
   document.getElementById("lucid-btn").addEventListener("click", toggleLucid);
 
-  var themeBtns = document.querySelectorAll(".theme-btn");
-  for (var i = 0; i < themeBtns.length; i++) {
-    (function(btn) {
-      btn.addEventListener("click", function() { setTheme(btn.dataset.theme); });
-    })(themeBtns[i]);
-  }
-
-  setInterval(mainTick, 1000);
-
-  window.addEventListener("mousemove", onDragMove);
-  window.addEventListener("touchmove", onDragMove, { passive: false });
-  window.addEventListener("mouseup", onDragEnd);
-  window.addEventListener("touchend", onDragEnd);
-
-  document.addEventListener("visibilitychange", function() {
-    tabHidden = document.hidden;
+  document.querySelectorAll(".theme-btn").forEach(function(btn) {
+    btn.addEventListener("click", function() { setTheme(btn.dataset.theme); });
   });
 
+  setInterval(function() { if (Math.random() < 0.32) spawnGlitch(); }, 4800);
+  setInterval(forgetPosts, 6500);
+  setInterval(manageSleepingShadows, 12000);
+  setInterval(mutateNames, 10000);
+  setInterval(updateDreamClock, 3200);
+  setInterval(checkVoid, 4200);
+  setInterval(maybeParalysis, 20000);
+  setInterval(spawnNewPost, 14000 + Math.random() * 8000);
   updateDreamClock();
 }
 
