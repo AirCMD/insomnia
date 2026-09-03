@@ -1,5 +1,5 @@
 /* =========================
-   СОМНА — стилі сну
+   СОМНА — стилі сну (повна версія)
    ========================= */
 
 :root {
@@ -29,7 +29,6 @@ html, body {
   user-select: none;
 }
 
-/* Темний фон */
 body::before {
   content: "";
   position: fixed;
@@ -72,10 +71,24 @@ body::before {
   opacity: 0.7;
 }
 
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  pointer-events: auto;
+}
+
+.dream-clock {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+  opacity: 0.7;
+}
+
 .user-nick {
   font-size: 0.85rem;
   color: var(--text-dim);
-  pointer-events: auto;
 }
 
 .user-nick strong {
@@ -84,7 +97,7 @@ body::before {
 }
 
 /* =========================
-   FEED — плаваючі острови
+   FEED
    ========================= */
 .feed {
   position: relative;
@@ -102,26 +115,22 @@ body::before {
   border-radius: 18px;
   padding: 18px 20px 14px;
   backdrop-filter: blur(12px);
-  box-shadow: 
-    0 0 40px rgba(0,0,0,0.5),
-    0 0 1px rgba(123, 108, 255, 0.3);
-  transition: 
-    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.4s ease,
-    opacity 0.8s ease,
-    filter 0.5s ease;
+  box-shadow: 0 0 40px rgba(0,0,0,0.5), 0 0 1px rgba(123, 108, 255, 0.3);
+  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease, opacity 0.8s ease, filter 0.5s ease;
   cursor: pointer;
   will-change: transform, left, top;
 }
 
 .post-island:hover {
   border-color: rgba(123, 108, 255, 0.3);
-  box-shadow: 
-    0 0 50px rgba(123, 108, 255, 0.15),
-    0 0 1px rgba(123, 108, 255, 0.5);
+  box-shadow: 0 0 50px rgba(123, 108, 255, 0.15), 0 0 1px rgba(123, 108, 255, 0.5);
 }
 
-/* Дрейф */
+.post-island.echo {
+  border-color: rgba(255, 154, 108, 0.25);
+  opacity: 0.85;
+}
+
 .post-island.drifting {
   animation: drift 18s ease-in-out infinite alternate;
 }
@@ -134,7 +143,6 @@ body::before {
   100% { transform: translate(-5px, -12px) rotate(-0.5deg); }
 }
 
-/* Розчинення */
 .post-island.dissolving {
   opacity: 0;
   filter: blur(12px);
@@ -142,11 +150,8 @@ body::before {
   pointer-events: none;
 }
 
-/* Пульсація від дотику */
 .post-island.touched {
-  box-shadow: 
-    0 0 60px rgba(255, 154, 108, 0.25),
-    0 0 2px rgba(255, 154, 108, 0.6);
+  box-shadow: 0 0 60px rgba(255, 154, 108, 0.25), 0 0 2px rgba(255, 154, 108, 0.6);
   border-color: rgba(255, 154, 108, 0.4);
 }
 
@@ -155,14 +160,8 @@ body::before {
 }
 
 @keyframes breathe {
-  0%, 100% { 
-    transform: scale(1);
-    box-shadow: 0 0 40px rgba(255, 154, 108, 0.15);
-  }
-  50% { 
-    transform: scale(1.025);
-    box-shadow: 0 0 70px rgba(255, 154, 108, 0.3);
-  }
+  0%, 100% { transform: scale(1); box-shadow: 0 0 40px rgba(255, 154, 108, 0.15); }
+  50% { transform: scale(1.025); box-shadow: 0 0 70px rgba(255, 154, 108, 0.3); }
 }
 
 /* =========================
@@ -183,7 +182,7 @@ body::before {
   position: relative;
   flex-shrink: 0;
   overflow: hidden;
-  transition: border-radius 1.5s ease, transform 1.2s ease;
+  transition: border-radius 1.5s ease, transform 1.2s ease, filter 1.5s ease, opacity 1.5s ease;
 }
 
 .shadow-avatar::after {
@@ -195,40 +194,31 @@ body::before {
   opacity: 0.7;
 }
 
-/* Форми тіней */
-.shadow-avatar[data-mood="спокійний"] {
-  border-radius: 50% 40% 50% 40%;
+.shadow-avatar.sleeping {
+  filter: blur(3px);
+  opacity: 0.45;
+  animation: none !important;
 }
-.shadow-avatar[data-mood="тривожний"] {
-  border-radius: 30% 70% 40% 60%;
-  animation: morph-anxious 3s ease-in-out infinite;
+
+.shadow-avatar.waking {
+  animation: wake 1.2s ease-out;
 }
-.shadow-avatar[data-mood="сумний"] {
-  border-radius: 60% 40% 50% 50%;
-  transform: scaleY(0.9);
+
+@keyframes wake {
+  0% { filter: blur(3px); opacity: 0.45; transform: scale(0.95); }
+  40% { filter: blur(0); opacity: 1; transform: scale(1.08); }
+  100% { filter: blur(0); opacity: 1; transform: scale(1); }
 }
-.shadow-avatar[data-mood="радісний"] {
-  border-radius: 45% 55% 40% 60%;
-  animation: morph-happy 2.5s ease-in-out infinite;
-}
-.shadow-avatar[data-mood="цікавий"] {
-  border-radius: 40% 60% 55% 45%;
-}
-.shadow-avatar[data-mood="сонний"] {
-  border-radius: 50%;
-  opacity: 0.7;
-  filter: blur(1px);
-}
-.shadow-avatar[data-mood="задумливий"] {
-  border-radius: 55% 45% 60% 40%;
-}
-.shadow-avatar[data-mood="наляканий"] {
-  border-radius: 35% 65% 30% 70%;
-  animation: morph-fear 1.8s ease-in-out infinite;
-}
-.shadow-avatar[data-mood="нейтральний"] {
-  border-radius: 50%;
-}
+
+.shadow-avatar[data-mood="спокійний"] { border-radius: 50% 40% 50% 40%; }
+.shadow-avatar[data-mood="тривожний"] { border-radius: 30% 70% 40% 60%; animation: morph-anxious 3s ease-in-out infinite; }
+.shadow-avatar[data-mood="сумний"] { border-radius: 60% 40% 50% 50%; transform: scaleY(0.9); }
+.shadow-avatar[data-mood="радісний"] { border-radius: 45% 55% 40% 60%; animation: morph-happy 2.5s ease-in-out infinite; }
+.shadow-avatar[data-mood="цікавий"] { border-radius: 40% 60% 55% 45%; }
+.shadow-avatar[data-mood="сонний"] { border-radius: 50%; opacity: 0.7; filter: blur(1px); }
+.shadow-avatar[data-mood="задумливий"] { border-radius: 55% 45% 60% 40%; }
+.shadow-avatar[data-mood="наляканий"] { border-radius: 35% 65% 30% 70%; animation: morph-fear 1.8s ease-in-out infinite; }
+.shadow-avatar[data-mood="нейтральний"] { border-radius: 50%; }
 
 @keyframes morph-anxious {
   0%, 100% { border-radius: 30% 70% 40% 60%; }
@@ -247,6 +237,7 @@ body::before {
   font-size: 0.9rem;
   color: var(--text);
   opacity: 0.9;
+  transition: color 0.8s ease;
 }
 
 .post-date {
@@ -256,7 +247,7 @@ body::before {
 }
 
 /* =========================
-   КОНТЕНТ ПОСТА
+   КОНТЕНТ
    ========================= */
 .post-content {
   font-size: 0.92rem;
@@ -294,21 +285,17 @@ body::before {
   transition: color 0.3s;
 }
 
-.touch-btn:hover {
-  color: var(--warm);
-}
+.touch-btn:hover { color: var(--warm); }
 
 .comment-btn {
   cursor: pointer;
   transition: color 0.3s;
 }
 
-.comment-btn:hover {
-  color: var(--accent);
-}
+.comment-btn:hover { color: var(--accent); }
 
 /* =========================
-   ПАНЕЛЬ КОМЕНТАРІВ
+   КОМЕНТАРІ
    ========================= */
 .comments-panel {
   position: fixed;
@@ -327,9 +314,7 @@ body::before {
   overflow: hidden;
 }
 
-.comments-panel.open {
-  right: 0;
-}
+.comments-panel.open { right: 0; }
 
 .comments-header {
   padding: 20px 22px 14px;
@@ -355,9 +340,7 @@ body::before {
   transition: color 0.2s;
 }
 
-.close-comments:hover {
-  color: var(--text);
-}
+.close-comments:hover { color: var(--text); }
 
 .comments-list {
   flex: 1;
@@ -392,7 +375,7 @@ body::before {
 }
 
 /* =========================
-   ФОРМА СТВОРЕННЯ ПОСТА
+   ФОРМА
    ========================= */
 .compose {
   position: fixed;
@@ -429,6 +412,32 @@ body::before {
 
 .compose textarea::placeholder {
   color: var(--text-dim);
+}
+
+.compose-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.lucid-btn {
+  background: transparent;
+  border: 1px solid rgba(123, 108, 255, 0.35);
+  color: var(--accent);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lucid-btn:hover {
+  background: rgba(123, 108, 255, 0.15);
+  border-color: var(--accent);
 }
 
 .publish-btn {
@@ -513,9 +522,7 @@ body::before {
   transition: opacity 1s ease 0.3s;
 }
 
-.intro-nick.visible {
-  opacity: 1;
-}
+.intro-nick.visible { opacity: 1; }
 
 .intro-hint {
   font-size: 0.8rem;
@@ -524,8 +531,91 @@ body::before {
   transition: opacity 1s ease 1s;
 }
 
-.intro-hint.visible {
-  opacity: 0.7;
+.intro-hint.visible { opacity: 0.7; }
+
+/* =========================
+   ПРОВАЛ (VOID)
+   ========================= */
+.void {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  z-index: 5000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.6s ease;
+}
+
+.void.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.void span {
+  color: #333;
+  font-size: 1.1rem;
+  letter-spacing: 0.2em;
+  font-weight: 300;
+}
+
+/* =========================
+   СОННИЙ ПАРАЛІЧ
+   ========================= */
+.paralysis-msg {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 4000;
+  color: #222;
+  font-size: 1.3rem;
+  letter-spacing: 0.4em;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1s ease;
+}
+
+.paralysis-msg.visible {
+  opacity: 1;
+}
+
+body.paralysis {
+  pointer-events: none !important;
+}
+
+body.paralysis .post-island,
+body.paralysis .compose,
+body.paralysis .header {
+  filter: grayscale(0.7) brightness(0.6);
+  transition: filter 1.2s ease;
+}
+
+/* =========================
+   ЛЮЦИДНИЙ РЕЖИМ
+   ========================= */
+body.lucid {
+  --island-bg: rgba(28, 28, 42, 0.92);
+  --text: #e8e8f0;
+  --text-dim: #9a9aaa;
+}
+
+body.lucid .post-island {
+  border-color: rgba(123, 108, 255, 0.35);
+  box-shadow: 0 0 40px rgba(123, 108, 255, 0.2);
+}
+
+body.lucid .blackout {
+  background: #222;
+}
+
+body.lucid::before {
+  background: 
+    radial-gradient(ellipse at 30% 40%, rgba(60, 50, 120, 0.25) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 60%, rgba(40, 70, 100, 0.2) 0%, transparent 50%),
+    linear-gradient(180deg, #0a0a16 0%, #12122a 100%);
 }
 
 /* =========================
@@ -541,9 +631,8 @@ body::before {
     letter-spacing: 0.28em;
   }
 
-  .user-nick {
-    font-size: 0.78rem;
-  }
+  .user-nick { font-size: 0.78rem; }
+  .dream-clock { font-size: 0.72rem; }
 
   .post-island {
     width: min(92vw, 340px);
@@ -551,28 +640,11 @@ body::before {
     border-radius: 16px;
   }
 
-  .post-content {
-    font-size: 0.9rem;
-    line-height: 1.5;
-  }
-
-  .post-actions {
-    font-size: 0.75rem;
-    gap: 14px;
-  }
-
-  .shadow-avatar {
-    width: 32px;
-    height: 32px;
-  }
-
-  .author-name {
-    font-size: 0.85rem;
-  }
-
-  .post-date {
-    font-size: 0.68rem;
-  }
+  .post-content { font-size: 0.9rem; line-height: 1.5; }
+  .post-actions { font-size: 0.75rem; gap: 14px; }
+  .shadow-avatar { width: 32px; height: 32px; }
+  .author-name { font-size: 0.85rem; }
+  .post-date { font-size: 0.68rem; }
 
   .comments-panel {
     width: 100%;
@@ -580,13 +652,8 @@ body::before {
     right: -100%;
   }
 
-  .comments-header {
-    padding: 16px 18px 12px;
-  }
-
-  .comments-list {
-    padding: 14px 18px;
-  }
+  .comments-header { padding: 16px 18px 12px; }
+  .comments-list { padding: 14px 18px; }
 
   .compose {
     bottom: 16px;
@@ -608,8 +675,10 @@ body::before {
     font-size: 0.85rem;
   }
 
-  .publish-btn.fleeing {
-    transition: transform 0.15s ease-out;
+  .lucid-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
   }
 
   .intro-title {
@@ -617,12 +686,9 @@ body::before {
     letter-spacing: 0.35em;
   }
 
-  .intro-nick {
-    font-size: 1rem;
-  }
+  .intro-nick { font-size: 1rem; }
 }
 
-/* Дуже маленькі екрани */
 @media (max-width: 380px) {
   .post-island {
     width: 94vw;
@@ -634,12 +700,9 @@ body::before {
     letter-spacing: 0.22em;
   }
 
-  .compose {
-    bottom: 12px;
-  }
+  .compose { bottom: 12px; }
 }
 
-/* Safe-area (iPhone тощо) */
 @supports (padding: max(0px)) {
   .header {
     padding-left: max(16px, env(safe-area-inset-left));
@@ -658,14 +721,7 @@ body::before {
   }
 }
 
-/* Touch-пристрої */
 @media (hover: none) and (pointer: coarse) {
-  .post-island {
-    padding: 18px 18px 14px;
-  }
-
-  .touch-btn,
-  .comment-btn {
-    padding: 6px 0;
-  }
+  .post-island { padding: 18px 18px 14px; }
+  .touch-btn, .comment-btn { padding: 6px 0; }
 }
