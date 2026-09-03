@@ -6,7 +6,7 @@
   <title>Сомна</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
-<body>
+<body data-theme="default">
 
   <!-- Intro -->
   <div class="intro-overlay" id="intro">
@@ -19,6 +19,11 @@
   <header class="header">
     <div class="logo">со<span>мна</span></div>
     <div class="header-right">
+      <div class="theme-switcher">
+        <button class="theme-btn active" data-theme="default" title="Звичайна">●</button>
+        <button class="theme-btn" data-theme="cosmos" title="Космос">✦</button>
+        <button class="theme-btn" data-theme="negative" title="Негатив">✧</button>
+      </div>
       <div class="dream-clock" id="dream-clock">--:--</div>
       <div class="user-nick">ти · <strong id="user-nick">...</strong></div>
     </div>
@@ -51,7 +56,7 @@
 
   <!-- Провал -->
   <div class="void" id="void">
-    <span>ти точно не спиш?</span>
+    <span>ти прокинувся?</span>
   </div>
 
   <!-- Сонний параліч -->
