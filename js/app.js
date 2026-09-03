@@ -1,10 +1,10 @@
 /* =========================
-   СОМНА — логіка сну
+   СОМНА — логіка сну (повна версія)
    ========================= */
 
 const NICK_PREFIXES = [
   "тінь", "сон", "голос", "відлуння", "уламки", "подих", "луна",
-  "попіл", "імла", "шепіт", "відбиток", "слід", "відлуння"
+  "попіл", "імла", "шепіт", "відбиток", "слід", "луна"
 ];
 
 const NICK_SUFFIXES = [
@@ -15,7 +15,10 @@ const NICK_SUFFIXES = [
 let currentUser = "";
 let posts = [];
 let touchCounts = {};
-let activeCommentsPostId = null;
+let activityScore = 0;
+let lucidActive = false;
+let paralysisActive = false;
+let dreamTimeOffset = 0;
 
 // ---------- Генерація ніка ----------
 function generateNick() {
@@ -25,15 +28,15 @@ function generateNick() {
 }
 
 // ---------- Чорні квадрати ----------
-function applyBlackouts(text) {
+function applyBlackouts(text, intensity = 0.35) {
   let result = text;
   BLACKOUT_WORDS.forEach(word => {
-    if (Math.random() < 0.35) {
+    if (Math.random() < intensity) {
       const regex = new RegExp(word, "gi");
       result = result.replace(regex, "██████");
     }
   });
-  if (Math.random() < 0.4) {
+  if (Math.random() < intensity + 0.1) {
     const words = result.split(" ");
     const idx = Math.floor(Math.random() * words.length);
     if (words[idx] && words[idx].length > 3 && !words[idx].includes("█")) {
@@ -44,19 +47,18 @@ function applyBlackouts(text) {
   return result;
 }
 
-// ---------- Форматування контенту ----------
-function formatContent(text) {
-  return applyBlackouts(text)
+function formatContent(text, intensity = 0.35) {
+  return applyBlackouts(text, intensity)
     .replace(/██████/g, '<span class="blackout">██████</span>');
 }
 
-// ---------- Створення острова-поста ----------
-function createIsland(post, index) {
+// ---------- Створення острова ----------
+function createIsland(post) {
   const island = document.createElement("div");
   island.className = "post-island drifting";
   island.dataset.id = post.id;
+  island.dataset.age = 0;
 
-  // позиція (на мобільних обережніше)
   const isMobile = window.innerWidth < 768;
   const x = isMobile ? 3 + Math.random() * 40 : 5 + Math.random() * 60;
   const y = isMobile ? 14 + Math.random() * 42 : 12 + Math.random() * 55;
@@ -66,12 +68,13 @@ function createIsland(post, index) {
   island.style.animationDuration = `${14 + Math.random() * 10}s`;
 
   const user = FAKE_USERS.find(u => u.name === post.author) || { mood: "нейтральний" };
+  const isSleeping = Math.random() < 0.25;
 
   island.innerHTML = `
     <div class="post-header">
-      <div class="shadow-avatar" data-mood="${user.mood}"></div>
+      <div class="shadow-avatar \( {isSleeping ? "sleeping" : ""}" data-mood=" \){user.mood}"></div>
       <div>
-        <div class="author-name">${post.author}</div>
+        <div class="author-name" data-original="\( {post.author}"> \){post.author}</div>
         <div class="post-date">${post.displayDate}</div>
       </div>
     </div>
@@ -88,44 +91,54 @@ function createIsland(post, index) {
 
   island.querySelector(".touch-btn").addEventListener("click", (e) => {
     e.stopPropagation();
+    if (paralysisActive) return;
     handleTouch(post.id, island);
+    activityScore += 1;
   });
 
   island.querySelector(".comment-btn").addEventListener("click", (e) => {
     e.stopPropagation();
+    if (paralysisActive) return;
     openComments(post);
+    activityScore += 1;
   });
 
-  // іноді пост розчиняється
-  if (Math.random() < 0.18) {
-    setTimeout(() => {
-      island.classList.add("dissolving");
-      setTimeout(() => island.remove(), 900);
-    }, 8000 + Math.random() * 20000);
+  if (Math.random() < 0.12) {
+    setTimeout(() => dissolveIsland(island), 10000 + Math.random() * 15000);
   }
 
   return island;
 }
 
-// ---------- Дотик (лайк) ----------
+function dissolveIsland(island) {
+  island.classList.add("dissolving");
+  setTimeout(() => island.remove(), 900);
+}
+
+// ---------- Дотик ----------
 function handleTouch(id, island) {
   touchCounts[id] = (touchCounts[id] || 0) + 1;
   island.classList.add("touched");
+  island.dataset.age = 0;
 
   if (touchCounts[id] >= 4) {
     island.classList.add("breathing");
   }
 
+  const avatar = island.querySelector(".shadow-avatar");
+  if (avatar && avatar.classList.contains("sleeping")) {
+    avatar.classList.remove("sleeping");
+    avatar.classList.add("waking");
+    setTimeout(() => avatar.classList.remove("waking"), 1500);
+  }
+
   setTimeout(() => {
-    if (touchCounts[id] < 4) {
-      island.classList.remove("touched");
-    }
+    if (touchCounts[id] < 4) island.classList.remove("touched");
   }, 1200);
 }
 
 // ---------- Коментарі ----------
 function openComments(post) {
-  activeCommentsPostId = post.id;
   const panel = document.getElementById("comments-panel");
   const list = document.getElementById("comments-list");
   const title = document.getElementById("comments-title");
@@ -144,11 +157,9 @@ function openComments(post) {
     list.appendChild(div);
   });
 
-  // іноді текст переставляється
-  if (Math.random() < 0.3) {
+  if (Math.random() < 0.35) {
     setTimeout(() => {
-      const texts = list.querySelectorAll(".comment-text");
-      texts.forEach(el => {
+      list.querySelectorAll(".comment-text").forEach(el => {
         const words = el.textContent.split(" ");
         if (words.length > 3) {
           const i = Math.floor(Math.random() * (words.length - 1));
@@ -156,7 +167,7 @@ function openComments(post) {
           el.textContent = words.join(" ");
         }
       });
-    }, 2000 + Math.random() * 3000);
+    }, 1800 + Math.random() * 2500);
   }
 
   panel.classList.add("open");
@@ -164,11 +175,11 @@ function openComments(post) {
 
 function closeComments() {
   document.getElementById("comments-panel").classList.remove("open");
-  activeCommentsPostId = null;
 }
 
 // ---------- Глюки ----------
 function spawnGlitch() {
+  if (lucidActive) return;
   const type = Math.random() > 0.5 ? "rect" : "square";
   const el = document.createElement("div");
   el.className = type === "rect" ? "glitch-rect" : "glitch-square";
@@ -192,20 +203,17 @@ function setupFleeingButton() {
   const isTouch = window.matchMedia("(hover: none) and (pointer: coarse)").matches;
 
   btn.addEventListener("mouseenter", () => {
+    if (paralysisActive || lucidActive) return;
     if (fleeTimeout) clearTimeout(fleeTimeout);
 
-    // На мобільних втікає рідше і менше
     const farChance = isTouch ? 0.04 : 0.12;
     const distance = Math.random() < farChance
       ? (isTouch ? 60 + Math.random() * 100 : 300 + Math.random() * 200)
       : (isTouch ? 2 + Math.random() * 7 : 3 + Math.random() * 12);
 
     const angle = Math.random() * Math.PI * 2;
-    const dx = Math.cos(angle) * distance;
-    const dy = Math.sin(angle) * distance;
-
     btn.classList.add("fleeing");
-    btn.style.transform = `translate(${dx}px, ${dy}px)`;
+    btn.style.transform = `translate(${Math.cos(angle) * distance}px, ${Math.sin(angle) * distance}px)`;
 
     fleeTimeout = setTimeout(() => {
       btn.style.transform = "translate(0, 0)";
@@ -214,8 +222,10 @@ function setupFleeingButton() {
   });
 }
 
-// ---------- Публікація ----------
+// ---------- Публікація + Відлуння ----------
 function publishPost() {
+  if (paralysisActive) return;
+
   const textarea = document.getElementById("compose-text");
   let text = textarea.value.trim();
   if (!text) return;
@@ -227,27 +237,161 @@ function publishPost() {
     author: currentUser,
     content: text,
     date: "2047-11-13",
-    displayDate: "завтра, " + new Date(Date.now() + 86400000).toLocaleDateString("uk-UA", {
-      day: "numeric", month: "long", year: "numeric"
-    }).replace(/\d{4}/, "20" + (47 + Math.floor(Math.random() * 50))),
+    displayDate: "завтра, " + weirdDate(),
     commentsCount: Math.floor(Math.random() * 5) + 1,
-    comments: [
-      {
-        author: FAKE_USERS[Math.floor(Math.random() * FAKE_USERS.length)].name,
-        text: "Я бачив щось схоже. Але трохи інакше.",
-        date: "2009-0" + (Math.floor(Math.random() * 9) + 1) + "-1" + Math.floor(Math.random() * 9)
-      }
-    ]
+    comments: [{
+      author: FAKE_USERS[Math.floor(Math.random() * FAKE_USERS.length)].name,
+      text: "Я бачив щось схоже. Але трохи інакше.",
+      date: "2009-0" + (Math.floor(Math.random() * 9) + 1) + "-1" + Math.floor(Math.random() * 9)
+    }]
   };
 
   posts.unshift(newPost);
-  const island = createIsland(newPost, 0);
-  document.getElementById("feed").appendChild(island);
-
+  document.getElementById("feed").appendChild(createIsland(newPost));
   textarea.value = "";
-  
+
+  // Відлуння
+  if (Math.random() < 0.55) {
+    setTimeout(() => {
+      const echo = {
+        id: Date.now() + 1,
+        author: FAKE_USERS[Math.floor(Math.random() * FAKE_USERS.length)].name,
+        content: applyBlackouts(text, 0.6),
+        date: "1999-99-99",
+        displayDate: "колись",
+        commentsCount: 0,
+        comments: []
+      };
+      const echoIsland = createIsland(echo);
+      echoIsland.classList.add("echo");
+      document.getElementById("feed").appendChild(echoIsland);
+    }, 2200 + Math.random() * 2000);
+  }
+
+  activityScore += 2;
   setTimeout(spawnGlitch, 200);
-  setTimeout(spawnGlitch, 400);
+  setTimeout(spawnGlitch, 450);
+}
+
+function weirdDate() {
+  const day = Math.floor(Math.random() * 31) + 1;
+  const months = ["січня","лютого","березня","квітня","травня","червня","липня","серпня","вересня","жовтня","листопада","грудня"];
+  const year = 20 + Math.floor(Math.random() * 80);
+  return `${day} ${months[Math.floor(Math.random()*12)]} ${year}`;
+}
+
+// ---------- Забування постів ----------
+function forgetPosts() {
+  document.querySelectorAll(".post-island").forEach(island => {
+    let age = parseInt(island.dataset.age || "0");
+    age += 1;
+    island.dataset.age = age;
+
+    const content = island.querySelector(".post-content");
+    if (!content) return;
+
+    if (age > 8 && Math.random() < 0.4) {
+      content.innerHTML = formatContent(content.textContent, 0.25 + age * 0.04);
+    }
+
+    if (age > 22 && Math.random() < 0.3) {
+      dissolveIsland(island);
+    }
+  });
+}
+
+// ---------- Тіні засинають ----------
+function manageSleepingShadows() {
+  document.querySelectorAll(".shadow-avatar").forEach(av => {
+    if (Math.random() < 0.08) av.classList.add("sleeping");
+  });
+}
+
+// ---------- Імена змінюються ----------
+function mutateNames() {
+  document.querySelectorAll(".author-name").forEach(el => {
+    if (Math.random() < 0.12) {
+      const original = el.dataset.original || el.textContent;
+      el.textContent = applyBlackouts(original, 0.5);
+      setTimeout(() => {
+        if (Math.random() < 0.6) el.textContent = original;
+      }, 3000 + Math.random() * 4000);
+    }
+  });
+
+  if (Math.random() < 0.07) {
+    const nickEl = document.getElementById("user-nick");
+    const old = nickEl.textContent;
+    nickEl.textContent = applyBlackouts(old, 0.6);
+    setTimeout(() => nickEl.textContent = currentUser, 4000);
+  }
+}
+
+// ---------- Час сну ----------
+function updateDreamClock() {
+  const clock = document.getElementById("dream-clock");
+  if (!clock) return;
+
+  dreamTimeOffset += (Math.random() - 0.45) * 40;
+  const now = new Date(Date.now() + dreamTimeOffset * 1000 * 60);
+  const h = String(now.getHours()).padStart(2, "0");
+  const m = String(now.getMinutes()).padStart(2, "0");
+  const weird = Math.random() < 0.15 ? (Math.random() < 0.5 ? "∞" : "??") : m;
+  clock.textContent = `\( {h}: \){weird}`;
+}
+
+// ---------- Люцидний режим ----------
+function toggleLucid() {
+  if (paralysisActive) return;
+  lucidActive = true;
+  document.body.classList.add("lucid");
+
+  const btn = document.getElementById("lucid-btn");
+  if (btn) btn.style.opacity = "0.3";
+
+  setTimeout(() => {
+    lucidActive = false;
+    document.body.classList.remove("lucid");
+    document.querySelectorAll(".post-island").forEach(isle => {
+      if (Math.random() < 0.4) {
+        const content = isle.querySelector(".post-content");
+        if (content) content.innerHTML = formatContent(content.textContent, 0.55);
+      }
+    });
+    if (btn) btn.style.opacity = "1";
+  }, 9000);
+}
+
+// ---------- Провал ----------
+function checkVoid() {
+  if (activityScore > 14 && Math.random() < 0.45) {
+    triggerVoid();
+    activityScore = 0;
+  }
+  activityScore = Math.max(0, activityScore - 0.4);
+}
+
+function triggerVoid() {
+  const voidEl = document.getElementById("void");
+  const messages = ["ти прокинувся?", "це все ще сон", "не рухайся", "хтось дивиться", "ти вже був тут"];
+  voidEl.querySelector("span").textContent = messages[Math.floor(Math.random() * messages.length)];
+  voidEl.classList.add("active");
+  setTimeout(() => voidEl.classList.remove("active"), 2800 + Math.random() * 1500);
+}
+
+// ---------- Сонний параліч ----------
+function maybeParalysis() {
+  if (paralysisActive || lucidActive || Math.random() > 0.018) return;
+
+  paralysisActive = true;
+  document.body.classList.add("paralysis");
+  document.getElementById("paralysis-msg").classList.add("visible");
+
+  setTimeout(() => {
+    paralysisActive = false;
+    document.body.classList.remove("paralysis");
+    document.getElementById("paralysis-msg").classList.remove("visible");
+  }, 4500 + Math.random() * 2000);
 }
 
 // ---------- Ініціалізація ----------
@@ -263,7 +407,6 @@ function init() {
 
   setTimeout(() => nickEl.classList.add("visible"), 600);
   setTimeout(() => hintEl.classList.add("visible"), 1400);
-
   setTimeout(() => {
     overlay.classList.add("hidden");
     setTimeout(() => overlay.remove(), 1300);
@@ -272,28 +415,22 @@ function init() {
   posts = [...DREAM_POSTS];
   const feed = document.getElementById("feed");
   posts.forEach((p, i) => {
-    setTimeout(() => {
-      feed.appendChild(createIsland(p, i));
-    }, i * 180);
+    setTimeout(() => feed.appendChild(createIsland(p)), i * 160);
   });
 
   document.getElementById("publish-btn").addEventListener("click", publishPost);
   setupFleeingButton();
-
   document.getElementById("close-comments").addEventListener("click", closeComments);
+  document.getElementById("lucid-btn").addEventListener("click", toggleLucid);
 
-  setInterval(() => {
-    if (Math.random() < 0.4) spawnGlitch();
-  }, 4000 + Math.random() * 6000);
-
-  setInterval(() => {
-    document.querySelectorAll(".shadow-avatar").forEach(av => {
-      if (Math.random() < 0.3) {
-        const moods = FAKE_USERS.map(u => u.mood);
-        av.dataset.mood = moods[Math.floor(Math.random() * moods.length)];
-      }
-    });
-  }, 12000);
+  setInterval(() => { if (Math.random() < 0.35) spawnGlitch(); }, 4500);
+  setInterval(forgetPosts, 6000);
+  setInterval(manageSleepingShadows, 11000);
+  setInterval(mutateNames, 9000);
+  setInterval(updateDreamClock, 3000);
+  setInterval(checkVoid, 4000);
+  setInterval(maybeParalysis, 18000);
+  updateDreamClock();
 }
 
 document.addEventListener("DOMContentLoaded", init);
