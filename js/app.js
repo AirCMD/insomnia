@@ -461,7 +461,7 @@ function checkVoid() {
 
 function triggerVoid() {
   var voidEl = document.getElementById("void");
-  var messages = ["ти прокинувся?", "це все ще сон", "не рухайся", "хтось дивиться", "ти вже був тут"];
+  var messages = ["ти точно не спиш?", "це все ще сон", "не рухайся", "хтось дивиться", "це твоє дежавю"];
   voidEl.querySelector("span").textContent = messages[Math.floor(Math.random() * messages.length)];
   voidEl.classList.add("active");
   setTimeout(function() { voidEl.classList.remove("active"); }, 2600 + Math.random() * 1400);
