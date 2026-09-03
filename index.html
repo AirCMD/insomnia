@@ -18,10 +18,13 @@
   <!-- Header -->
   <header class="header">
     <div class="logo">со<span>мна</span></div>
-    <div class="user-nick">ти · <strong id="user-nick">...</strong></div>
+    <div class="header-right">
+      <div class="dream-clock" id="dream-clock">--:--</div>
+      <div class="user-nick">ти · <strong id="user-nick">...</strong></div>
+    </div>
   </header>
 
-  <!-- Feed — плаваючі острови -->
+  <!-- Feed -->
   <main class="feed" id="feed"></main>
 
   <!-- Панель коментарів -->
@@ -40,8 +43,19 @@
       placeholder="що тобі снилося..."
       maxlength="280"
     ></textarea>
-    <button class="publish-btn" id="publish-btn">опублікувати</button>
+    <div class="compose-actions">
+      <button class="lucid-btn" id="lucid-btn" title="Люцидний режим">◈</button>
+      <button class="publish-btn" id="publish-btn">опублікувати</button>
+    </div>
   </div>
+
+  <!-- Провал -->
+  <div class="void" id="void">
+    <span>ти точно не спиш?</span>
+  </div>
+
+  <!-- Сонний параліч -->
+  <div class="paralysis-msg" id="paralysis-msg">не рухайся</div>
 
   <script src="js/data.js"></script>
   <script src="js/app.js"></script>
